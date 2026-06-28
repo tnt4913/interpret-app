@@ -1,0 +1,39 @@
+<!--pages/index/index.wxml-->
+<view class="container">
+  <!-- 顶部标题区 -->
+  <view class="header">
+    <view class="logo-wrap">
+      <view class="logo-icon">🎧</view>
+    </view>
+    <view class="title">面试同传助手</view>
+    <view class="subtitle">Interview Interpretation Assistant</view>
+  </view>
+
+  <!-- 功能卡片 -->
+  <view class="features">
+    <view class="feature-card" wx:for="{{features}}" wx:key="icon">
+      <view class="feature-icon">{{item.icon}}</view>
+      <view class="feature-info">
+        <view class="feature-title">{{item.title}}</view>
+        <view class="feature-desc">{{item.desc}}</view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 使用提示 -->
+  <view class="tips-card">
+    <view class="tip-title">📋 使用指南</view>
+    <view class="tip-item" wx:for="{{tips}}" wx:key="*this">
+      <text class="tip-num">{{index + 1}}</text>
+      <text class="tip-text">{{item}}</text>
+    </view>
+  </view>
+
+  <!-- 开始按钮 -->
+  <view class="start-btn-wrap">
+    <button class="btn-primary btn-xl" bindtap="goToCall">
+      🚀 开始同传
+    </button>
+    <view class="version-text">v1.0.0 | 预祝面试顺利</view>
+  </view>
+</view>

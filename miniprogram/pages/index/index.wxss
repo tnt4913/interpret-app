@@ -1,0 +1,143 @@
+/* pages/index/index.wxss */
+.container {
+  min-height: 100vh;
+  padding-bottom: 60rpx;
+}
+
+/* 头部 */
+.header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 80rpx 0 40rpx;
+}
+
+.logo-wrap {
+  width: 140rpx;
+  height: 140rpx;
+  border-radius: 36rpx;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 12rpx 40rpx rgba(102, 126, 234, 0.4);
+  margin-bottom: 24rpx;
+}
+
+.logo-icon {
+  font-size: 64rpx;
+}
+
+.title {
+  font-size: 48rpx;
+  font-weight: bold;
+  color: #fff;
+  margin-bottom: 8rpx;
+}
+
+.subtitle {
+  font-size: 26rpx;
+  color: #6B7280;
+  letter-spacing: 2rpx;
+}
+
+/* 功能卡片 */
+.features {
+  padding: 0 24rpx;
+  margin-top: 20rpx;
+}
+
+.feature-card {
+  display: flex;
+  align-items: center;
+  background: linear-gradient(135deg, #1A1A2E 0%, #16213E 100%);
+  border-radius: 24rpx;
+  padding: 32rpx;
+  margin-bottom: 20rpx;
+  box-shadow: 0 8rpx 32rpx rgba(0, 0, 0, 0.3);
+}
+
+.feature-icon {
+  font-size: 48rpx;
+  margin-right: 28rpx;
+  width: 80rpx;
+  text-align: center;
+}
+
+.feature-info {
+  flex: 1;
+}
+
+.feature-title {
+  font-size: 32rpx;
+  font-weight: 600;
+  color: #E0E0E0;
+  margin-bottom: 6rpx;
+}
+
+.feature-desc {
+  font-size: 24rpx;
+  color: #6B7280;
+  line-height: 1.5;
+}
+
+/* 提示卡片 */
+.tips-card {
+  margin: 24rpx;
+  background: linear-gradient(135deg, #1A1A2E 0%, #16213E 100%);
+  border-radius: 24rpx;
+  padding: 36rpx;
+  box-shadow: 0 8rpx 32rpx rgba(0, 0, 0, 0.3);
+}
+
+.tip-title {
+  font-size: 32rpx;
+  font-weight: 600;
+  color: #667eea;
+  margin-bottom: 24rpx;
+}
+
+.tip-item {
+  display: flex;
+  align-items: flex-start;
+  margin-bottom: 20rpx;
+}
+
+.tip-num {
+  width: 40rpx;
+  height: 40rpx;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: #fff;
+  font-size: 22rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 20rpx;
+  flex-shrink: 0;
+  margin-top: 4rpx;
+}
+
+.tip-text {
+  font-size: 26rpx;
+  color: #9CA3AF;
+  line-height: 1.6;
+  flex: 1;
+}
+
+/* 开始按钮 */
+.start-btn-wrap {
+  padding: 48rpx 48rpx;
+}
+
+.btn-xl {
+  font-size: 36rpx;
+  padding: 32rpx 0;
+}
+
+.version-text {
+  text-align: center;
+  font-size: 22rpx;
+  color: #4B5563;
+  margin-top: 24rpx;
+}

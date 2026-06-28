@@ -1,0 +1,94 @@
+<!--pages/call/call.wxml-->
+<view class="call-container">
+
+  <!-- 顶部状态栏 -->
+  <view class="status-bar">
+    <view class="status-left">
+      <view class="status-dot {{recording ? 'recording' : 'idle'}}"></view>
+      <text class="status-text">{{statusText}}</text>
+    </view>
+    <view class="status-right">
+      <text class="timer">{{formatTime}}</text>
+    </view>
+  </view>
+
+  <!-- 对方说话区（英文原文 + 中文翻译） -->
+  <scroll-view class="translation-area" scroll-y scroll-into-view="{{scrollToView}}" scroll-with-animation enhanced show-scrollbar="{{false}}">
+    <view class="section-label">
+      <text>🎙️ 对方发言 / Interviewer</text>
+    </view>
+
+    <block wx:for="{{messages}}" wx:key="id">
+      <!-- 对方消息 -->
+      <view class="msg-item msg-other" id="msg-{{item.id}}" wx:if="{{item.role === 'other'}}">
+        <view class="msg-bubble other-bubble">
+          <view class="msg-original">{{item.original}}</view>
+          <view class="msg-translated" wx:if="{{item.translated}}">
+            <text class="lang-tag">中</text>
+            <text class="translated-text">{{item.translated}}</text>
+          </view>
+          <view class="msg-loading" wx:if="{{!item.translated && item.original}}">
+            <text class="loading-dot">●</text>
+            <text class="loading-dot">●</text>
+            <text class="loading-dot">●</text>
+            <text class="loading-hint">翻译中</text>
+          </view>
+        </view>
+      </view>
+
+      <!-- 我的消息 -->
+      <view class="msg-item msg-mine" id="msg-{{item.id}}" wx:if="{{item.role === 'mine'}}">
+        <view class="msg-bubble mine-bubble">
+          <view class="msg-original">{{item.original}}</view>
+          <view class="msg-translated" wx:if="{{item.translated}}">
+            <text class="lang-tag">中</text>
+            <text class="translated-text">{{item.translated}}</text>
+          </view>
+        </view>
+        <view class="msg-role-tag">我</view>
+      </view>
+    </block>
+
+    <!-- 空状态 -->
+    <view class="empty-state" wx:if="{{messages.length === 0 && recording}}">
+      <view class="empty-icon pulse">👂</view>
+      <view class="empty-text">正在聆听...</view>
+      <view class="empty-hint">对方开始说话后，翻译将自动显示</view>
+    </view>
+  </scroll-view>
+
+  <!-- AI 回答参考区 -->
+  <view class="answer-section" wx:if="{{currentAnswer}}">
+    <view class="answer-header">
+      <text class="answer-icon">💡</text>
+      <text class="answer-title">参考回答 / Suggested Answer</text>
+      <view class="answer-loading {{answerLoading ? '' : 'hidden'}}">
+        <text class="loading-dot">●</text><text class="loading-dot">●</text><text class="loading-dot">●</text>
+      </view>
+    </view>
+    <view class="answer-content {{answerLoading ? 'blurred' : ''}}">
+      {{currentAnswer}}
+    </view>
+    <view class="answer-actions">
+      <button class="answer-btn" bindtap="copyAnswer">📋 复制</button>
+      <button class="answer-btn" bindtap="dismissAnswer">✕ 关闭</button>
+    </view>
+  </view>
+
+  <!-- 底部控制栏 -->
+  <view class="control-bar">
+    <button class="ctrl-btn {{recording ? 'btn-stop' : 'btn-start'}}" bindtap="toggleRecording">
+      <view class="ctrl-icon">{{recording ? '⏹' : '🎙️'}}</view>
+      <view class="ctrl-text">{{recording ? '结束' : '开始'}}</view>
+    </button>
+    <button class="ctrl-btn btn-save" bindtap="saveRecording" wx:if="{{recording || hasRecording}}">
+      <view class="ctrl-icon">💾</view>
+      <view class="ctrl-text">保存</view>
+    </button>
+    <button class="ctrl-btn btn-clear" bindtap="clearMessages" wx:if="{{messages.length > 0}}">
+      <view class="ctrl-icon">🧹</view>
+      <view class="ctrl-text">清空</view>
+    </button>
+  </view>
+
+</view>
