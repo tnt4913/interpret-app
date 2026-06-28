@@ -2,8 +2,8 @@
 App({
   globalData: {
     // 后端服务地址，部署后替换为你的服务器地址
-    serverUrl: 'ws://localhost:3000',
-    httpUrl: 'http://localhost:3000',
+    serverUrl: 'wss://interpret-app.onrender.com/ws/interpret',
+    httpUrl: 'https://interpret-app.onrender.com',
     // API 密钥配置（实际部署时放在后端，这里仅作前端标识）
     sessionKey: '',
     userInfo: null
