@@ -3,8 +3,8 @@ services:
     name: interpret-app-server
     env: node
     plan: free
-    buildCommand: cd server && npm install
-    startCommand: cd server && node server.js
+    buildCommand: npm install
+    startCommand: node server/server.js
     healthCheckPath: /health
     envVars:
       - key: NODE_VERSION
