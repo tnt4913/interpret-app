@@ -1,0 +1,27 @@
+services:
+  - type: web
+    name: interpret-app-server
+    env: node
+    plan: free
+    buildCommand: cd server && npm install
+    startCommand: cd server && node server.js
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_VERSION
+        value: 18
+      - key: PORT
+        value: 10000
+      - key: ASR_PROVIDER
+        value: mock
+      - key: TRANSLATE_PROVIDER
+        value: baidu
+      - key: BAIDU_TRANSLATE_APPID
+        value: 20260629002639569
+      - key: BAIDU_TRANSLATE_KEY
+        value: 90XtgiXXDuHLtGYy_zbK
+      - key: LLM_PROVIDER
+        value: zhipu
+      - key: ZHIPU_API_KEY
+        value: b6f638e66d35467f87eb03f144a7730f.Z3vAJejYAU9Txjv2
+      - key: ZHIPU_BASE_URL
+        value: https://open.bigmodel.cn/api/paas/v4
