@@ -1,8 +1,7 @@
 {
-  "miniprogramRoot": "miniprogram/",
-  "projectname": "interpret-assistant",
-  "description": "面试同声传译助手小程序",
-  "appid": "touristappid",
+  "miniprogramRoot": "./",
+  "projectname": "interview-assistant",
+  "appid": "wx68ff323f1e1fa305",
   "setting": {
     "urlCheck": false,
     "es6": true,
@@ -10,7 +9,7 @@
     "postcss": true,
     "preloadBackgroundData": false,
     "minified": true,
-    "newFeature": true,
+    "newFeature": false,
     "coverView": true,
     "nodeModules": false,
     "autoAudits": false,
@@ -30,21 +29,20 @@
       "disablePlugins": [],
       "outputPath": ""
     },
-    "enableEngineNative": false,
+    "enableEngp": false,
+    "bundle": false,
     "useIsolateContext": true,
+    "useCompilerModule": true,
+    "userConfirmedUseCompilerModuleSwitch": false,
     "userConfirmedBundleSwitch": false,
     "packNpmManually": false,
     "packNpmRelationList": [],
     "minifyWXSS": true,
-    "showES6CompileOption": false,
+    "disableUseStrict": false,
     "minifyWXML": true,
-    "ignoreUploadUnusedFiles": true
+    "showES6CompileOption": false,
+    "useCompilerPlugins": false
   },
   "compileType": "miniprogram",
-  "libVersion": "3.3.4",
-  "condition": {},
-  "editorSetting": {
-    "tabIndent": "insertSpaces",
-    "tabSize": 2
-  }
+  "condition": {}
 }
