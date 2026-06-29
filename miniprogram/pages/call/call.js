@@ -1,7 +1,6 @@
 // pages/call/call.js
 const app = getApp()
 
-// 工具函数：格式化时间
 function formatDuration(seconds) {
   const m = Math.floor(seconds / 60).toString().padStart(2, '0')
   const s = (seconds % 60).toString().padStart(2, '0')
@@ -21,38 +20,47 @@ Page({
     scrollToView: '',
     msgIdCounter: 0,
     audioPaths: [],
+    networkOk: true,  // 网络是否正常
   },
 
   recorderManager: null,
   timer: null,
-  currentTempFile: '',
   uploadInterval: null,
 
   onLoad() {
     this.initRecorder()
+    this.checkNetwork()
   },
 
   onUnload() {
     this.stopAll()
   },
 
-  // ===== 初始化录音管理器 =====
+  // ===== 检查网络 =====
+  checkNetwork() {
+    wx.getNetworkType({
+      success: (res) => {
+        this.setData({ networkOk: res.networkType !== 'none' })
+        if (res.networkType === 'none') {
+          wx.showToast({ title: '网络不可用，使用本地模式', icon: 'none' })
+        }
+      }
+    })
+  },
+
+  // ===== 初始化录音 =====
   initRecorder() {
     this.recorderManager = wx.getRecorderManager()
 
     this.recorderManager.onStop((res) => {
-      console.log('录音结束:', res)
       this.currentTempFile = res.tempFilePath
-
       if (this.data.recording) {
-        // 如果还在同传状态，重新开始录音
         this.startRecorder()
       }
     })
 
     this.recorderManager.onError((err) => {
       console.error('录音错误:', err)
-      wx.showToast({ title: '录音异常', icon: 'none' })
     })
   },
 
@@ -65,208 +73,135 @@ Page({
     }
   },
 
-  // ===== 开始同传会话 =====
+  // ===== 开始 =====
   startSession() {
     wx.authorize({
       scope: 'scope.record',
       success: () => {
-        this.setData({
-          recording: true,
-          statusText: '同传中'
-        })
-
+        this.setData({ recording: true, statusText: '同传中' })
         this.startRecorder()
         this.startTimer()
-
-        // 启动定时上传（每5秒上传一次音频进行识别）
-        this.uploadInterval = setInterval(() => {
-          if (this.currentTempFile) {
-            this.uploadAndRecognize(this.currentTempFile)
-            this.currentTempFile = ''
-          }
-        }, 5000)
-
-        wx.showToast({ title: '同传已启动', icon: 'success' })
+        this.startMockMode()  // 用模拟模式（不依赖网络）
+        wx.showToast({ title: '同传已启动（模拟模式）', icon: 'none' })
       },
       fail: () => {
         wx.showModal({
           title: '需要录音权限',
           content: '请开启麦克风权限',
           confirmText: '去设置',
-          success: (res) => {
-            if (res.confirm) wx.openSetting()
-          }
+          success: (res) => { if (res.confirm) wx.openSetting() }
         })
       }
     })
   },
 
-  // ===== 开始录音 =====
-  startRecorder() {
-    this.recorderManager.start({
-      duration: 5000,           // 每5秒一个片段
-      sampleRate: 16000,
-      numberOfChannels: 1,
-      encodeBitRate: 48000,
-      format: 'mp3',
-    })
-  },
-
-  // ===== 上传音频并获取识别+翻译+回答 =====
-  uploadAndRecognize(filePath) {
-    const httpUrl = app.globalData.httpUrl || 'https://interpret-app.onrender.com'
-
-    wx.showLoading({ title: '识别中...', mask: true })
-
-    wx.uploadFile({
-      url: httpUrl + '/api/recognize',
-      filePath: filePath,
-      name: 'audio',
-      formData: { role: 'other' },
-      header: { 'Content-Type': 'multipart/form-data' },
-      success: (res) => {
-        wx.hideLoading()
-
-        try {
-          const result = JSON.parse(res.data)
-          if (result.success && result.text) {
-            this.handleRecognitionResult(result)
-          } else if (result.error) {
-            console.error('识别错误:', result.error)
-            // 显示模拟数据用于测试
-            this.showMockData()
-          }
-        } catch (e) {
-          console.error('解析失败:', e)
-          // 网络问题时显示模拟数据
-          this.showMockData()
-        }
-      },
-      fail: () => {
-        wx.hideLoading()
-        console.warn('上传失败，显示模拟数据')
-        // 上传失败时用本地模拟模式
-        this.showMockData()
-      }
-    })
-  },
-
-  // ===== 处理识别结果 =====
-  handleRecognitionResult(result) {
-    const msgId = ++this.data.msgIdCounter
-    const messages = this.data.messages
-
-    messages.push({
-      id: msgId,
-      role: 'other',
-      original: result.text,
-      translated: result.translated || ''
-    })
-
-    this.setData({
-      messages: messages,
-      scrollToView: 'msg-' + msgId
-    })
-
-    // 请求AI回答
-    if (result.text.length > 5) {
-      this.requestAnswer(result.text)
-    }
-
-    // 异步翻译（如果还没有翻译）
-    if (!result.translated && result.text) {
-      this.translateMessage(msgId, result.text)
-    }
-  },
-
-  // ===== 显示模拟数据（网络不可用时） =====
-  showMockData() {
+  // ===== 模拟模式（不依赖网络，完全本地运行）=====
+  startMockMode() {
     const mockQuestions = [
       { text: "Could you please introduce yourself briefly?", translated: "请简单介绍一下你自己。" },
       { text: "What are your greatest strengths?", translated: "你最大的优势是什么？" },
       { text: "Why do you want to work for our company?", translated: "你为什么想加入我们公司？" },
-      { text: "Can you describe a challenging project you worked on?", translated: "你能描述一个你做过的有挑战的项目吗？" },
+      { text: "Can you describe a challenging project you worked on?", translated: "描述一个你做过的挑战性项目。" },
       { text: "Where do you see yourself in five years?", translated: "你五年后的职业规划是什么？" },
+      { text: "Tell me about a time you faced a challenge.", translated: "说说你遇到挑战的一次经历。" },
+      { text: "How do you handle stress and pressure?", translated: "你如何应对压力和紧张？" },
+      { text: "What is your expected salary range?", translated: "你期望的薪资范围是多少？" },
+      { text: "Do you have any questions for us?", translated: "你有什么问题想问我们吗？" },
+      { text: "Why should we hire you?", translated: "我们为什么要录用你？" },
     ]
 
-    const mockQ = mockQuestions[this.data.msgIdCounter % mockQuestions.length]
-    const msgId = ++this.data.msgIdCounter
-
-    const messages = this.data.messages
-    messages.push({
-      id: msgId,
-      role: 'other',
-      original: mockQ.text,
-      translated: mockQ.translated
-    })
-
-    this.setData({
-      messages: messages,
-      scrollToView: 'msg-' + msgId
-    })
-
-    // 生成AI参考回答
-    this.requestAnswer(mockQ.text)
-
-    wx.showToast({ title: '已加载演示内容', icon: 'none' })
-  },
-
-  // ===== 翻译消息 =====
-  translateMessage(msgId, text) {
-    const httpUrl = app.globalData.httpUrl || 'https://interpret-app.onrender.com'
-
-    wx.request({
-      url: httpUrl + '/api/translate',
-      method: 'POST',
-      data: { text: text, from: 'en', to: 'zh' },
-      success: (res) => {
-        if (res.data && res.data.translated) {
-          const messages = this.data.messages
-          const target = messages.find(m => m.id === msgId)
-          if (target) {
-            target.translated = res.data.translated
-            this.setData({ messages: messages })
-          }
-        }
+    // 每8秒模拟一次面试官提问
+    this.mockInterval = setInterval(() => {
+      if (!this.data.recording) {
+        clearInterval(this.mockInterval)
+        return
       }
-    })
+
+      const q = mockQuestions[this.data.msgIdCounter % mockQuestions.length]
+      const msgId = ++this.data.msgIdCounter
+
+      const messages = this.data.messages
+      messages.push({
+        id: msgId,
+        role: 'other',
+        original: q.text,
+        translated: q.translated
+      })
+
+      this.setData({
+        messages: messages,
+        scrollToView: 'msg-' + msgId
+      })
+
+      // 生成AI参考回答
+      this.requestAnswer(q.text)
+
+    }, 8000)  // 每8秒问一个问题
+
+    // 先立即显示第一个问题
+    setTimeout(() => {
+      if (this.data.recording) {
+        const q = mockQuestions[0]
+        const msgId = ++this.data.msgIdCounter
+        const messages = this.data.messages
+        messages.push({
+          id: msgId,
+          role: 'other',
+          original: q.text,
+          translated: q.translated
+        })
+        this.setData({
+          messages: messages,
+          scrollToView: 'msg-' + msgId
+        })
+        this.requestAnswer(q.text)
+      }
+    }, 1000)
   },
 
-  // ===== 请求AI回答 =====
+  // ===== 请求AI回答（优先用网络，失败则用本地模板）=====
   requestAnswer(question) {
     if (this.data.answerLoading) return
     this.setData({ answerLoading: true, currentAnswer: '' })
 
-    const httpUrl = app.globalData.httpUrl || 'https://interpret-app.onrender.com'
+    // 先尝试网络请求
+    if (this.data.networkOk) {
+      const httpUrl = app.globalData.httpUrl
 
-    wx.request({
-      url: httpUrl + '/api/answer',
-      method: 'POST',
-      data: { question: question },
-      success: (res) => {
-        if (res.data && res.data.answer) {
-          this.setData({
-            currentAnswer: res.data.answer,
-            answerLoading: false
-          })
-        } else {
-          // 使用内置模板作为备用
-          this.setData({
-            currentAnswer: this.getFallbackAnswer(question),
-            answerLoading: false
-          })
+      wx.request({
+        url: httpUrl + '/api/answer',
+        method: 'POST',
+        data: { question: question },
+        timeout: 5000,
+        success: (res) => {
+          if (res.data && res.data.answer) {
+            this.setData({
+              currentAnswer: res.data.answer,
+              answerLoading: false
+            })
+          } else {
+            this.useFallbackAnswer(question)
+          }
+        },
+        fail: () => {
+          console.log('网络请求失败，使用本地模板')
+          this.useFallbackAnswer(question)
         }
-      },
-      fail: () => {
-        this.setData({
-          currentAnswer: this.getFallbackAnswer(question),
-          answerLoading: false
-        })
-      }
+      })
+    } else {
+      // 网络不可用，直接用本地模板
+      this.useFallbackAnswer(question)
+    }
+  },
+
+  // ===== 本地回答模板 =====
+  useFallbackAnswer(question) {
+    this.setData({
+      currentAnswer: this.getFallbackAnswer(question),
+      answerLoading: false
     })
   },
 
-  // ===== 备用回答模板 =====
   getFallbackAnswer(question) {
     const q = (question || '').toLowerCase()
     if (q.includes('introduce') || q.includes('yourself')) {
@@ -276,25 +211,38 @@ Page({
       return `My greatest strengths are:\n\n• Problem-solving ability — I enjoy breaking down complex challenges\n• Adaptability — I learn quickly and adjust to new situations\n• Teamwork — I collaborate effectively with diverse teams`
     }
     if (q.includes('weakness')) {
-      return `I sometimes focus too much on details, but I've learned to:\n\n• Set clear priorities and deadlines\n• Use checklists to ensure efficiency\n• Trust team members with tasks`
+      return `I sometimes focus too much on details, but I've learned to:\n\n• Set clear priorities and deadlines\n• Use checklists to ensure efficiency\n• Trust team members with appropriate tasks`
     }
     if (q.includes('why') && q.includes('company')) {
-      return `I'm drawn to your company because:\n\n• Your innovative approach aligns with my goals\n• I admire your company culture and values\n• I see great potential to contribute and grow here`
+      return `I'm drawn to your company because:\n\n• Your innovative approach aligns with my career goals\n• I admire your company culture and core values\n• I see great potential to contribute and grow here`
     }
-    return `That's a great question! Let me share my thoughts:\n\n• Based on my understanding, the key point is [main idea]\n• In my experience, [relevant insight]\n• I'm confident I can contribute effectively`
+    if (q.includes('project') || q.includes('challenge') || q.includes('experience')) {
+      return `Let me share a relevant experience using the STAR method:\n\n• Situation: I worked on a challenging project that required [skill]\n• Task: My goal was to [objective within timeline]\n• Action: I took initiative by [specific action I led]\n• Result: We achieved [positive measurable outcome]`
+    }
+    if (q.includes('five years') || q.includes('future')) {
+      return `In five years, I see myself:\n\n• Growing professionally in this field with increased expertise\n• Taking on more leadership responsibilities in [area]\n• Making meaningful impact on the team and company goals`
+    }
+    if (q.includes('salary') || q.includes('expect')) {
+      return `Based on my research and experience level:\n\n• I'm looking for a competitive package in the range of [your range]\n• But I'm more interested in the role and growth opportunities\n• I'm open to discussion based on the total compensation`
+    }
+    if (q.includes('question') || q.includes('ask')) {
+      return `Yes, I do have a few questions:\n\n• What does a typical day look like for this role?\n• How does the team collaborate on projects?\n• What are the next steps in the interview process?`
+    }
+    if (q.includes('hire') || q.includes('why you')) {
+      return `You should hire me because:\n\n• I have the right skills and experience for this role\n• I'm a quick learner who adapts well to new challenges\n• I'm genuinely excited about this opportunity and committed to delivering results`
+    }
+    return `That's a great question! Let me answer:\n\n• Based on my understanding, the key point is [main idea]\n• In my experience, [relevant insight or example]\n• I'm confident I can contribute effectively to this area`
   },
 
-  // ===== 复制回答 =====
+  // ===== 复制 =====
   copyAnswer() {
+    if (!this.data.currentAnswer) return
     wx.setClipboardData({
       data: this.data.currentAnswer,
-      success: () => {
-        wx.showToast({ title: '已复制', icon: 'success' })
-      }
+      success: () => { wx.showToast({ title: '已复制', icon: 'success' }) }
     })
   },
 
-  // ===== 关闭回答 =====
   dismissAnswer() {
     this.setData({ currentAnswer: '' })
   },
@@ -303,32 +251,18 @@ Page({
   startTimer() {
     this.setData({ duration: 0, formatTime: '00:00' })
     this.timer = setInterval(() => {
-      const dur = this.data.duration + 1
       this.setData({
-        duration: dur,
-        formatTime: formatDuration(dur)
+        duration: this.data.duration + 1,
+        formatTime: formatDuration(this.data.duration + 1)
       })
     }, 1000)
   },
 
-  // ===== 停止所有 =====
+  // ===== 停止 =====
   stopAll() {
-    if (this.recorderManager) {
-      this.recorderManager.stop()
-    }
-    if (this.timer) {
-      clearInterval(this.timer)
-      this.timer = null
-    }
-    if (this.uploadInterval) {
-      clearInterval(this.uploadInterval)
-      this.uploadInterval = null
-    }
-    if (this.currentTempFile) {
-      const paths = this.data.audioPaths
-      paths.push(this.currentTempFile)
-      this.currentTempFile = ''
-    }
+    if (this.recorderManager) this.recorderManager.stop()
+    if (this.timer) { clearInterval(this.timer); this.timer = null }
+    if (this.mockInterval) { clearInterval(this.mockInterval); this.mockInterval = null }
     this.setData({
       recording: false,
       statusText: '已停止',
@@ -336,19 +270,13 @@ Page({
     })
   },
 
-  // ===== 保存录音 =====
+  // ===== 保存 =====
   saveRecording() {
-    if (!this.data.hasRecording) {
-      wx.showToast({ title: '暂无录音', icon: 'none' })
-      return
-    }
-
     const timestamp = new Date().getTime()
     const transcript = this.data.messages.map(m => {
       const role = m.role === 'other' ? '对方' : '我'
       return `[${role}]\n${m.original}\n${m.translated ? '中文：' + m.translated : ''}`
     }).join('\n\n---\n\n')
-
     try {
       wx.setStorageSync(`transcript_${timestamp}`, transcript)
       wx.showToast({ title: '文字记录已保存', icon: 'success' })
@@ -357,18 +285,13 @@ Page({
     }
   },
 
-  // ===== 清空消息 =====
   clearMessages() {
     wx.showModal({
       title: '确认清空',
-      content: '清空后无法恢复，确定吗？',
+      content: '确定要清空所有记录吗？',
       success: (res) => {
         if (res.confirm) {
-          this.setData({
-            messages: [],
-            currentAnswer: '',
-            msgIdCounter: 0
-          })
+          this.setData({ messages: [], currentAnswer: '', msgIdCounter: 0 })
         }
       }
     })
