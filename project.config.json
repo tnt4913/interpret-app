@@ -1,5 +1,5 @@
 {
-  "miniprogramRoot": "./",
+  "miniprogramRoot": "miniprogram/",
   "projectname": "interview-assistant",
   "appid": "wx68ff323f1e1fa305",
   "setting": {
